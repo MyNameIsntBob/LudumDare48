@@ -34,7 +34,9 @@ func select_units():
 
 func _unhandled_input(event):
 	if event.is_action_pressed('move_camera'):
-		$Camera2D.position = get_global_mouse_position()
+		var tileToDestroy = $TileMap.world_to_map(get_global_mouse_position())
+		$TileMap.set_cellv(tileToDestroy, 0)
+#		$Camera2D.position = get_global_mouse_position()
 		
 		
 	if event.is_action_pressed('select'):
