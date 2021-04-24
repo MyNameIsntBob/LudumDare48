@@ -7,6 +7,8 @@ export (NodePath) var tileMapPath
 export var jumpHeight = 1
 export var jumpDistance = 2
 
+var first = false
+
 var tileMap
 var graph 
 
@@ -19,7 +21,6 @@ func _ready():
 	graph = AStar2D.new()
 	tileMap = get_node(tileMapPath)
 	createMap()
-	createConections()
 
 func findPath(start, end):
 #	var first_point = graph.get_closest_position_in_segment(start)
@@ -160,6 +161,12 @@ func _draw():
 			draw_line(pos, graph.get_point_position(joinPoint), Color(255, 0, 0), 1)
 			
 func createMap():
+#	Reset if you already created the map
+	graph.clear()
+	for node in get_children():
+		remove_child(node)
+		node.queue_free()
+	
 	var space_state = get_world_2d().direct_space_state
 	var cells = tileMap.get_used_cells()
 	
@@ -182,6 +189,8 @@ func createMap():
 				var result = space_state.intersect_ray(pos, pto)
 				if (result):					
 					createPoint(tileMap.world_to_map(result.position))
+	createConections()
+	update()
 
 func cellType(pos, global = false, isAbove = false):
 	if (global):

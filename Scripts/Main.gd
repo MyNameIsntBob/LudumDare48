@@ -24,7 +24,7 @@ func select_units():
 	query.transform = Transform2D(0, (drag_end + drag_start) / 2)
 	var to_select = space.intersect_shape(query)
 	for item in to_select:
-		if item.collider.get_class() == 'KinematicBody2D':
+		if item.collider.is_in_group('Selectable'):
 			selected.push_back(item.collider)
 			item.collider.selected = true
 		else:
@@ -35,13 +35,23 @@ func select_units():
 func _unhandled_input(event):
 	if event.is_action_pressed('move_camera'):
 		var tileToDestroy = $TileMap.world_to_map(get_global_mouse_position())
-		$TileMap.set_cellv(tileToDestroy, 0)
+		if tileToDestroy and false:
+			for node in selected:
+				node.block_to_destroy(tileToDestroy)
+		else:
+			var space_state = get_world_2d().direct_space_state
+			var mpos = get_global_mouse_position()
+			var result = space_state.intersect_ray(mpos, Vector2(mpos.x, mpos.y + 1000))
+			if (result):
+				for node in selected:
+					node.move_to(result.position)
+			pass
 #		$Camera2D.position = get_global_mouse_position()
 		
 		
 	if event.is_action_pressed('select'):
 		if !drag_start:
-			print(selected)
+#			print(selected)
 			if selected.size() != 0:
 				for item in selected:
 					item.selected = false
@@ -76,3 +86,11 @@ func _draw():
 #			dragging = false
 #	elif event is InputEventMouseMotion and dragging:
 #		$Camera2D.position = startingPos - get_global_mouse_position()
+
+
+
+
+func _on_Player_destroyTile(cell):
+	$TileMap.set_cellv(cell, -1)
+	$PathFinder.createMap()
+	pass # Replace with function body.
