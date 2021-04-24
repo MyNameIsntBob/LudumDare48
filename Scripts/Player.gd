@@ -9,9 +9,10 @@ var gravity := 20.0
 var velocity : Vector2
 var acceleration := 1500
 var maxSpeed := 100
-var friction := 0.2
+var normalFriction := 0.03
+var stoppedFriction := 0.1
 
-var target_padding := 10
+var target_padding := 100
 
 var selected := false
 var atTarget := true
@@ -47,14 +48,16 @@ func _process(delta):
 			input_vect.x -= 1
 			
 #		This is where your issue is located
-		print(abs(position.x - target.x))
-		if abs(position.x - target.x) < target_padding:
+#		print(abs(position.x - target.x))
+		if position.distance_to(target) < target_padding: #abs(position.x - target.x) < target_padding:
 			next_target()
 		pass
 	elif blockToDestroy:
 		destroy_block()
 		
 	if !onLadder:
+		if velocity.y < 0:
+			velocity.y = 0
 		velocity.y += gravity
 	else:
 		if target.y < position.y:
@@ -64,8 +67,11 @@ func _process(delta):
 			
 	if input_vect != Vector2.ZERO:
 		velocity += input_vect * acceleration * delta
+#	else:
 	else:
-		velocity = velocity.linear_interpolate(Vector2(0, velocity.y), friction)
+		velocity = velocity.linear_interpolate(Vector2(0, velocity.y), stoppedFriction)
+		
+	velocity = velocity.linear_interpolate(Vector2(0, velocity.y), normalFriction)
 	
 	velocity = move_and_slide(velocity)
 
@@ -93,9 +99,9 @@ func block_to_destroy(pos):
 #	move_to(tileMap.map_to_world(pos))
 
 
-func _on_Area2D_body_exited(body):
+func _on_Area2D_body_exited(_body):
 	onLadder = false
 
 
-func _on_Area2D_body_entered(body):
+func _on_Area2D_body_entered(_body):
 	onLadder = true

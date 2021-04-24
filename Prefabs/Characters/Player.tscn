@@ -4,10 +4,10 @@
 [ext_resource path="res://Scripts/Player.gd" type="Script" id=2]
 
 [sub_resource type="RectangleShape2D" id=1]
-extents = Vector2( 32.6815, 33.1288 )
+extents = Vector2( 63.8221, 64.2267 )
 
 [sub_resource type="RectangleShape2D" id=2]
-extents = Vector2( 32.4179, 33.2679 )
+extents = Vector2( 64.713, 65.3403 )
 
 [node name="Player" type="KinematicBody2D" groups=[
 "Selectable",
@@ -17,6 +17,7 @@ collision_mask = 3
 script = ExtResource( 2 )
 
 [node name="Sprite" type="Sprite" parent="."]
+scale = Vector2( 2, 2 )
 texture = ExtResource( 1 )
 __meta__ = {
 "_edit_lock_": true

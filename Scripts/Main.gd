@@ -8,13 +8,9 @@ var selected = []
 var drag_start 
 var drag_end 
 var select_rect = RectangleShape2D.new()
+var mine := false
 
-func _process(delta):
-	pass
-#	update()
-#	if dragging:
-#		print('dragging')
-#		print(drag_start)
+var blocksToMine := []
 
 func select_units():
 	select_rect.extents = (drag_end - drag_start) / 2
@@ -23,6 +19,7 @@ func select_units():
 	query.set_shape(select_rect)
 	query.transform = Transform2D(0, (drag_end + drag_start) / 2)
 	var to_select = space.intersect_shape(query)
+	print(to_select)
 	for item in to_select:
 		if item.collider.is_in_group('Selectable'):
 			selected.push_back(item.collider)
@@ -94,3 +91,7 @@ func _on_Player_destroyTile(cell):
 	$TileMap.set_cellv(cell, -1)
 	$PathFinder.createMap()
 	pass # Replace with function body.
+
+
+func _on_Button_pressed():
+	mine = true
