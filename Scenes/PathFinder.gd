@@ -11,7 +11,7 @@ var tileMap
 var laddersMap
 var graph 
 
-var showLines = false
+var showLines = true
 
 const TEST = preload("res://Prefabs/Face.tscn")
 
@@ -123,7 +123,7 @@ func createConections():
 func _draw():
 	if !showLines:
 		return
-	
+
 	var points = graph.get_points()
 	for point in points:
 		var closestRight = -1
@@ -136,7 +136,7 @@ func _draw():
 		var pointsToJoin = []
 		var noBiJoin = []
 
-		
+
 
 		for newPoint in points:
 			var newPos = graph.get_point_position(newPoint)
@@ -150,10 +150,10 @@ func _draw():
 				if (newPos[1] >= pos[1] and newPos[1] <= pos[1] and 
 					newPos[0] > pos[0] - (cell_size * 2) and newPos[0] < pos[0]) and cellType(newPos, true, true)[1] == -1 :
 						pointsToJoin.append(newPoint)
-			
+
 			if newPos[0] == pos[0] and newPos[1] == pos[1] + (cell_size):
 				closestBelow = newPoint
-				
+
 			if (stat[1] == -1):
 				if (newPos[0] == pos[0] + cell_size and newPos[1] > pos[1]):
 					if closestRightDrop < 0 or newPos[1] < graph.get_point_position(closestRightDrop)[1]:

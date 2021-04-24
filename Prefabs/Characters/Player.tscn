@@ -7,7 +7,7 @@
 extents = Vector2( 63.8221, 64.2267 )
 
 [sub_resource type="RectangleShape2D" id=2]
-extents = Vector2( 64.713, 65.3403 )
+extents = Vector2( 64.713, 85.2643 )
 
 [node name="Player" type="KinematicBody2D" groups=[
 "Selectable",

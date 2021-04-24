@@ -1,16 +1,29 @@
 extends TileMap
 
 
-# Declare member variables here. Examples:
-# var a = 2
-# var b = "text"
+var targets := []
+export (NodePath) var pathFinderPath
 
+var pathFinder
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	pass # Replace with function body.
+	pathFinder = get_node(pathFinderPath)
 
+func destroy_block(cell):
+	if cell in targets:
+		targets.erase(cell)
+	set_cellv(cell, -1)
+	pathFinder.createMap()
+	
+func target(cell):
+	if cell in targets or !(cell in get_used_cells()):
+		return false
+	
+	targets.append(cell)
+	
+	return true
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-#func _process(delta):
-#	pass
+func untarget(cell):
+	if cell in targets:
+		targets.erase(cell)

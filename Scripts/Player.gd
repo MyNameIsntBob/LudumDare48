@@ -12,23 +12,26 @@ var maxSpeed := 100
 var normalFriction := 0.03
 var stoppedFriction := 0.1
 
-var target_padding := 100
+var block_size := 256
+var target_padding := 150
 
 var selected := false
 var atTarget := true
 var path 
 var target
-var blockToDestroy
+var blocksToDestroy := []
+var targetBlock 
+var targetBlockPos
 
 var onLadder
 
 onready var pathFinder = get_parent().find_node("PathFinder")
+onready var tilemap = get_parent().find_node("Ground")
 
-signal destroyTile(cell)
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	pass # Replace with function body.
+	randomize()
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -40,8 +43,7 @@ func _process(delta):
 		
 	var input_vect = Vector2.ZERO
 	
-	
-	if !atTarget:
+	if !atTarget and target:
 		if target > position:
 			input_vect.x += 1
 		if target < position: 
@@ -52,8 +54,35 @@ func _process(delta):
 		if position.distance_to(target) < target_padding: #abs(position.x - target.x) < target_padding:
 			next_target()
 		pass
-	elif blockToDestroy:
-		destroy_block()
+		
+	if blocksToDestroy.size() != 0:
+		if targetBlock:
+			if !targetBlock in blocksToDestroy:
+				tilemap.untarget(targetBlock)
+				targetBlock = null 
+				return
+			if position.distance_to(targetBlockPos) < block_size:
+				destroy_block()
+				blocksToDestroy.erase(targetBlock)
+		else:
+			blocksToDestroy.shuffle()
+#	tilemap.map_to_world(targetBlock) + Vector2(block_size/2, block_size/2)
+
+			for block in blocksToDestroy:
+				var pos = tilemap.map_to_world(block) + Vector2(block_size/2, block_size/2)
+				if !block in tilemap.targets:
+					if !targetBlockPos or position.distance_to(targetBlockPos) > position.distance_to(pos):
+						targetBlock = block
+						targetBlockPos = pos
+				else:
+					blocksToDestroy.erase(block)
+			tilemap.target(targetBlock)
+			atTarget = false
+			if targetBlock:
+				move_to(tilemap.map_to_world(targetBlock) + Vector2(block_size/2, block_size/2))
+	elif targetBlock:
+		tilemap.untarget(targetBlock)
+		targetBlock = null
 		
 	if !onLadder:
 		if velocity.y < 0:
@@ -76,8 +105,10 @@ func _process(delta):
 	velocity = move_and_slide(velocity)
 
 func destroy_block():
-	emit_signal("destroyTile", blockToDestroy)
-	blockToDestroy = null
+#	emit_signal("destroyTile", blockToDestroy)
+#	blockToDestroy = null
+	tilemap.destroy_block(targetBlock)
+	targetBlock = null
 
 func move_to(pos):
 	atTarget = false
@@ -94,8 +125,8 @@ func next_target():
 		atTarget = true
 		
 	
-func block_to_destroy(pos):
-	blockToDestroy = pos
+#func block_to_destroy(pos):
+#	blockToDestroy = pos
 #	move_to(tileMap.map_to_world(pos))
 
 

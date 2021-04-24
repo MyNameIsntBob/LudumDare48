@@ -8,48 +8,84 @@ var selected = []
 var drag_start 
 var drag_end 
 var select_rect = RectangleShape2D.new()
-var mine := false
+var mining := false
+var building := false
 
-var blocksToMine := []
+var item_id := 0
+
+#func _ready():
+#	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+#	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
 func select_units():
-	select_rect.extents = (drag_end - drag_start) / 2
-	var space = get_world_2d().direct_space_state
-	var query = Physics2DShapeQueryParameters.new()
-	query.set_shape(select_rect)
-	query.transform = Transform2D(0, (drag_end + drag_start) / 2)
-	var to_select = space.intersect_shape(query)
-	print(to_select)
-	for item in to_select:
+	for item in get_selection():
 		if item.collider.is_in_group('Selectable'):
 			selected.push_back(item.collider)
 			item.collider.selected = true
 		else:
 			selected.erase(item)
+	
+func mine_blocks():
+	mining = false
+	var toMine = []
+	for item in get_selection():
+		if item.collider.is_in_group('Mineable'):
+			toMine.append(item.metadata)
+	for player in selected:
+		player.blocksToDestroy = toMine
+	
+func get_selection():
+	select_rect.extents = (drag_end - drag_start) / 2
+	var space = get_world_2d().direct_space_state
+	var query = Physics2DShapeQueryParameters.new()
+	query.set_shape(select_rect)
+	query.transform = Transform2D(0, (drag_end + drag_start) / 2)
 	drag_start = null
 	drag_end = null
+	return space.intersect_shape(query)
 
 func _unhandled_input(event):
+	
+	if building:
+		var activeCell = $ToBuild.world_to_map(get_global_mouse_position())
+		$ToBuild.set_cellv(activeCell, item_id)
+		var cells = $ToBuild.get_used_cells()
+		for cell in cells:
+			if cell != activeCell:
+				$ToBuild.set_cellv(cell, -1)
+				
+		
+		if event.is_action_pressed('select'):
+			$Ladders.set_cellv($Ladders.world_to_map(get_global_mouse_position()), item_id)
+			for cell in $ToBuild.get_used_cells():
+				$ToBuild.set_cellv(cell, -1)
+			building = false
+			$PathFinder.createMap()
+		return
+	
+	
 	if event.is_action_pressed('move_camera'):
-		var tileToDestroy = $Ground.world_to_map(get_global_mouse_position())
-		if tileToDestroy and false:
-			for node in selected:
-				node.block_to_destroy(tileToDestroy)
-		else:
+		if selected.size() != 0:
+#			var tileToDestroy = $Ground.world_to_map(get_global_mouse_position())
+#			if tileToDestroy and false:
+#				for node in selected:
+#					node.block_to_destroy(tileToDestroy)
+#			else:
 			var space_state = get_world_2d().direct_space_state
 			var mpos = get_global_mouse_position()
 			var result = space_state.intersect_ray(mpos, Vector2(mpos.x, mpos.y + 1000))
 			if (result):
 				for node in selected:
+					node.blocksToDestroy = []
 					node.move_to(result.position)
-			pass
-#		$Camera2D.position = get_global_mouse_position()
+		else:
+			$Camera2D.position = get_global_mouse_position()
 		
 		
 	if event.is_action_pressed('select'):
 		if !drag_start:
 #			print(selected)
-			if selected.size() != 0:
+			if selected.size() != 0 and !mining:
 				for item in selected:
 					item.selected = false
 				selected = []
@@ -65,8 +101,10 @@ func _unhandled_input(event):
 			dragging = false
 			drag_end = get_global_mouse_position()
 			
-#			print(selected)
-			select_units()
+			if mining:
+				mine_blocks()
+			else:
+				select_units()
 			
 		
 func _draw():
@@ -87,11 +125,10 @@ func _draw():
 
 
 
-func _on_Player_destroyTile(cell):
-	$TileMap.set_cellv(cell, -1)
-	$PathFinder.createMap()
-	pass # Replace with function body.
-
-
 func _on_Button_pressed():
-	mine = true
+	if selected.size() != 0:
+		mining = true
+
+
+func _on_Build_pressed():
+	building = true
