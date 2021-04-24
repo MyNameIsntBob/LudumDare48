@@ -4,9 +4,6 @@ export var cell_size = 256
 
 export (NodePath) var tileMapPath
 
-export var jumpHeight = 1
-export var jumpDistance = 2
-
 var first = false
 
 var tileMap
@@ -40,8 +37,8 @@ func findPath(start, end):
 		var pos = graph.get_point_position(point)
 		var stat = cellType(pos, true, true)
 		
-		if lastPos and lastPos[1] >= pos[1] - (cell_size * jumpHeight) and ((lastPos[0] < pos[0] and stat[0] < 0) or (lastPos[0] > pos[0] and stat[1] < 0)):
-			actions.append(null)
+#		if lastPos and lastPos[1] >= pos[1] and ((lastPos[0] < pos[0] and stat[0] < 0) or (lastPos[0] > pos[0] and stat[1] < 0)):
+#			actions.append(null)
 
 		lastPos = pos
 		
@@ -78,15 +75,15 @@ func createConections():
 				if (newPos[0] == pos[0] - cell_size and newPos[1] > pos[1]):
 					if closestLeftDrop < 0 or newPos[1] < graph.get_point_position(closestLeftDrop)[1]:
 						closestLeftDrop = newPoint
-				if (newPos[1] >= pos[1] - (cell_size * jumpHeight) and newPos[1] <= pos[1] and 
-					newPos[0] > pos[0] - (cell_size * (jumpDistance + 2)) and newPos[0] < pos[0]) and cellType(newPos, true, true)[1] == -1 :
+				if (newPos[1] >= pos[1] and newPos[1] <= pos[1] and 
+					newPos[0] > pos[0] - (cell_size * 2) and newPos[0] < pos[0]) and cellType(newPos, true, true)[1] == -1 :
 						pointsToJoin.append(newPoint)
 			if (stat[1] == -1):
 				if (newPos[0] == pos[0] + cell_size and newPos[1] > pos[1]):
 					if closestRightDrop < 0 or newPos[1] < graph.get_point_position(closestRightDrop)[1]:
 						closestRightDrop = newPoint
-				if (newPos[1] >= pos[1] - (cell_size * jumpHeight) and newPos[1] <= pos[1] and 
-					newPos[0] < pos[0] + (cell_size * (jumpDistance + 2)) and newPos[0] > pos[0]) and cellType(newPos, true, true)[0] == -1 :
+				if (newPos[1] >= pos[1] and newPos[1] <= pos[1] and 
+					newPos[0] < pos[0] + (cell_size * 2) and newPos[0] > pos[0]) and cellType(newPos, true, true)[0] == -1 :
 						pointsToJoin.append(newPoint)
 
 		if (closestRight > 0):
@@ -131,15 +128,15 @@ func _draw():
 				if (newPos[0] == pos[0] - cell_size and newPos[1] > pos[1]):
 					if closestLeftDrop < 0 or newPos[1] < graph.get_point_position(closestLeftDrop)[1]:
 						closestLeftDrop = newPoint
-				if (newPos[1] >= pos[1] - (cell_size * jumpHeight) and newPos[1] <= pos[1] and 
-					newPos[0] > pos[0] - (cell_size * (jumpDistance + 2)) and newPos[0] < pos[0]) and cellType(newPos, true, true)[1] == -1 :
+				if (newPos[1] >= pos[1] and newPos[1] <= pos[1] and 
+					newPos[0] > pos[0] - (cell_size * 2) and newPos[0] < pos[0]) and cellType(newPos, true, true)[1] == -1 :
 						pointsToJoin.append(newPoint)
 			if (stat[1] == -1):
 				if (newPos[0] == pos[0] + cell_size and newPos[1] > pos[1]):
 					if closestRightDrop < 0 or newPos[1] < graph.get_point_position(closestRightDrop)[1]:
 						closestRightDrop = newPoint
-				if (newPos[1] >= pos[1] - (cell_size * jumpHeight) and newPos[1] <= pos[1] and 
-					newPos[0] < pos[0] + (cell_size * (jumpDistance + 2)) and newPos[0] > pos[0]) and cellType(newPos, true, true)[0] == -1 :
+				if (newPos[1] >= pos[1] and newPos[1] <= pos[1] and 
+					newPos[0] < pos[0] + (cell_size * 2) and newPos[0] > pos[0]) and cellType(newPos, true, true)[0] == -1 :
 						pointsToJoin.append(newPoint)
 
 		if (closestRight > 0):

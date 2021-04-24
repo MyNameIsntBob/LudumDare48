@@ -34,7 +34,7 @@ func select_units():
 
 func _unhandled_input(event):
 	if event.is_action_pressed('move_camera'):
-		var tileToDestroy = $TileMap.world_to_map(get_global_mouse_position())
+		var tileToDestroy = $Ground.world_to_map(get_global_mouse_position())
 		if tileToDestroy and false:
 			for node in selected:
 				node.block_to_destroy(tileToDestroy)
