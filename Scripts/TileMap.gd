@@ -5,6 +5,7 @@ var targets := []
 export (NodePath) var pathFinderPath
 
 var pathFinder
+#var CLAY = preload("res://Prefabs/Clay.tscn")
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -14,8 +15,13 @@ func destroy_block(cell):
 	cell = world_to_map(cell)
 	if cell in targets:
 		targets.erase(cell)
+#	If it's clay
+	if get_cellv(cell) == 1:
+		pass
 	set_cellv(cell, -1)
+	update_bitmask_area(cell)
 	pathFinder.createMap()
+	
 	
 func target(cell):
 	cell = world_to_map(cell)

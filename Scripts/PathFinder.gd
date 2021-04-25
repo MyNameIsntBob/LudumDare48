@@ -11,6 +11,10 @@ var tileMap
 var laddersMap
 var graph 
 
+var thread
+var updating := false
+var updateAfterThis := false
+
 var showLines = false
 
 const TEST = preload("res://Prefabs/Face.tscn")
@@ -20,6 +24,7 @@ func _ready():
 	graph = AStar2D.new()
 	tileMap = get_node(tileMapPath)
 	laddersMap = get_node(laddersMapPath)
+	thread = Thread.new()
 	createMap()
 
 func findPath(start, end):
@@ -45,41 +50,44 @@ func findPath(start, end):
 	return actions
 
 func createConections():
-	var space_state = get_world_2d().direct_space_state
 	var used_cells = tileMap.get_used_cells()
 
 	var points = graph.get_points()
 	for point in points:
-		if graph.get_point_position(point) - Vector2(0, 1) in used_cells:
+		var pos = graph.get_point_position(point)	
+		if pos - Vector2(0, 1) in used_cells:
 			break
 			
-		var onGround = graph.get_point_position(point) + Vector2(0, 1) in used_cells
+		var onGround = pos + Vector2(0, 1) in used_cells
 		var closestRight = -1
 		var closestLeftDrop = -1
 		var closestRightDrop = -1
 		var closestBelow = -1
-		var pos = graph.get_point_position(point)	
 		var stat = cellType(pos, true, true)
 
 		var pointsToJoin = []
 		var noBiJoin = []
 
-	
-
 		for newPoint in points:
 			if graph.get_point_position(newPoint) - Vector2(0, 1) in used_cells:
 				break
 			var newPos = graph.get_point_position(newPoint)
-			if ((stat[1] == 0 or newPos[0] == pos[0] + cell_size) and newPos[1] == pos[1] and newPos[0] > pos[0]):
-				if closestRight < 0 or newPos[0] < graph.get_point_position(closestRight)[0]: 
-					closestRight = newPoint
-			if (stat[0] == -1):
-				if (newPos[0] == pos[0] - cell_size and newPos[1] > pos[1]):
-					if closestLeftDrop < 0 or newPos[1] < graph.get_point_position(closestLeftDrop)[1]:
-						closestLeftDrop = newPoint
-				if (newPos[1] >= pos[1] and newPos[1] <= pos[1] and 
-					newPos[0] > pos[0] - (cell_size * 2) and newPos[0] < pos[0]) and cellType(newPos, true, true)[1] == -1 :
-						pointsToJoin.append(newPoint)
+			if (newPos[0] == pos[0] + cell_size and newPos[1] == pos[1]):
+				closestRight = newPoint
+			
+#			if ((stat[1] == 0 or newPos[0] == pos[0] + cell_size) and newPos[1] == pos[1] and newPos[0] > pos[0]):
+#				if closestRight < 0 or newPos[0] < graph.get_point_position(closestRight)[0]: 
+#					closestRight = newPoint
+
+#			useThis
+#			if !onGround  
+#			if (stat[0] == -1):
+#				if (newPos[0] == pos[0] - cell_size and newPos[1] > pos[1]):
+#					if closestLeftDrop < 0 or newPos[1] < graph.get_point_position(closestLeftDrop)[1]:
+#						closestLeftDrop = newPoint
+#				if (newPos[1] >= pos[1] and newPos[1] <= pos[1] and 
+#					newPos[0] > pos[0] - (cell_size * 2) and newPos[0] < pos[0]) and cellType(newPos, true, true)[1] == -1 :
+#						pointsToJoin.append(newPoint)
 
 
 			if !onGround and newPos[0] == pos[0] and newPos[1] > pos[1]:
@@ -117,7 +125,7 @@ func _draw():
 
 	var points = graph.get_points()
 	for point in points:
-		
+
 		if graph.get_point_position(point) - Vector2(0, 1) in used_cells:
 			break
 		var closestRight = -1
@@ -130,12 +138,12 @@ func _draw():
 		var pointsToJoin = []
 		var noBiJoin = []
 
-	
+
 
 		for newPoint in points:
 			if graph.get_point_position(newPoint) - Vector2(0, 1) in used_cells:
 				break
-			
+
 			var newPos = graph.get_point_position(newPoint)
 			if ((stat[1] == 0 or newPos[0] == pos[0] + cell_size) and newPos[1] == pos[1] and newPos[0] > pos[0]):
 				if closestRight < 0 or newPos[0] < graph.get_point_position(closestRight)[0]: 
@@ -167,7 +175,7 @@ func _draw():
 				pointsToJoin.append(closestBelow)
 			else:
 				noBiJoin.append(closestBelow)
-				
+
 		if (closestRight > 0 and !graph.get_point_position(closestRight) - Vector2(0, 1) in used_cells and
 			!graph.get_point_position(point) - Vector2(0, 1) in used_cells):
 			pointsToJoin.append(closestRight)
@@ -176,10 +184,29 @@ func _draw():
 			draw_line(pos, graph.get_point_position(joinPoint), Color(255, 0, 0), 1)
 		for joinPoint in noBiJoin:
 			draw_line(pos, graph.get_point_position(joinPoint), Color(255, 0, 0), 1)
-			
-func createMap():
+
+#func createMap():
+#	pass
+
+#func createMap():
+#	if updating:
+#		updateAfterThis = true
+#		return
+#
+#	updating = true
+#
+##	thread = Thread.new()
+#	thread.start(self, "setUpMap")
+#	thread.wait_to_finish()
+##	thread.wait_to_finish()
+#	print('Thread Down')
+#	updating = false
+#	if updateAfterThis:
+#		createMap()
+
+func createMap():	
 #	Reset if you already created the map
-	graph.clear()
+	graph.clear() 
 	for node in get_children():
 		remove_child(node)
 		node.queue_free()

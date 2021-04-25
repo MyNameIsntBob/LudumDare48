@@ -134,20 +134,25 @@ func destroy_blocks(blocks):
 
 func destroy_block():
 	targetBlock = null
-	if blocksToDestroy.size() == 0:
+	var blockSize = blocksToDestroy.size()
+	if blockSize == 0:
 		return
 	for block in blocksToDestroy:
-		if len(pathFinder.findPath(position, block)) > 0:
-			var pos = tilemap.target(block)
-			if pos:
-				move_to(pos, true)
-				waitState = yield(self, 'here')
-				if cancel:
-					return
-				tilemap.destroy_block(block)
-			if block in tilemap.targets:
-				blocksToDestroy.erase(block)
+		var pos = tilemap.target(block)
+		if pos:
+			move_to(pos, true)
+			waitState = yield(self, 'here')
+			if cancel:
+				return
+			tilemap.destroy_block(block)
+			blocksToDestroy.erase(block)
 		
+		if block in tilemap.targets:
+			blocksToDestroy.erase(block)
+	
+	if blockSize == blocksToDestroy.size():
+		return
+	
 	destroy_block()
 #
 #	for block in blocksToDestroy:
