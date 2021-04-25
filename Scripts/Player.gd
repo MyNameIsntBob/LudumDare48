@@ -202,6 +202,11 @@ func next_target():
 	else:
 		emit_signal('here')
 		atTarget = true
+		
+func queue_free():
+	if targetBlock:
+		tilemap.untarget(targetBlock)
+	.queue_free()
 
 func _on_Area2D_body_exited(_body):
 	onLadder = false

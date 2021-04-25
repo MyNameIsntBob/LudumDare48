@@ -11,8 +11,9 @@ var pathFinder
 func _ready():
 	pathFinder = get_node(pathFinderPath)
 
-func destroy_block(cell):
-	cell = world_to_map(cell)
+func destroy_block(cell, actual_pos = false):
+	if !actual_pos:
+		cell = world_to_map(cell)
 	if cell in targets:
 		targets.erase(cell)
 #	If it's clay
@@ -20,7 +21,7 @@ func destroy_block(cell):
 		pass
 	set_cellv(cell, -1)
 	update_bitmask_area(cell)
-	pathFinder.createMap()
+#	pathFinder.createMap()
 	
 	
 func target(cell):
@@ -49,5 +50,6 @@ func target(cell):
 	return map_to_world(cell_to_use)
 
 func untarget(cell):
+	cell = world_to_map(cell)
 	if cell in targets:
 		targets.erase(cell)

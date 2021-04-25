@@ -87,7 +87,8 @@ func _unhandled_input(event):
 #			print(selected)
 			if selected.size() != 0 and !mining:
 				for item in selected:
-					item.selected = false
+					if item:
+						item.selected = false
 				selected = []
 			
 			dragging = true
