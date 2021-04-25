@@ -10,7 +10,7 @@ var drag_end
 var select_rect = RectangleShape2D.new()
 var mining := false
 var building := false
-
+var map_size := 256
 var item_id := 0
 
 #func _ready():
@@ -30,9 +30,9 @@ func mine_blocks():
 	var toMine = []
 	for item in get_selection():
 		if item.collider.is_in_group('Mineable'):
-			toMine.append(item.metadata)
+			toMine.append($Ground.map_to_world(item.metadata))
 	for player in selected:
-		player.blocksToDestroy = toMine
+		player.destroy_blocks(toMine)
 	
 func get_selection():
 	select_rect.extents = (drag_end - drag_start) / 2
