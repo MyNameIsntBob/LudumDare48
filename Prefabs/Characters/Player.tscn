@@ -1,13 +1,13 @@
 [gd_scene load_steps=5 format=2]
 
-[ext_resource path="res://Art/icon.png" type="Texture" id=1]
+[ext_resource path="res://Art/Red Dude.png" type="Texture" id=1]
 [ext_resource path="res://Scripts/Player.gd" type="Script" id=2]
 
 [sub_resource type="RectangleShape2D" id=1]
-extents = Vector2( 63.8221, 64.2267 )
+extents = Vector2( 93.4631, 211.025 )
 
 [sub_resource type="RectangleShape2D" id=2]
-extents = Vector2( 64.713, 85.2643 )
+extents = Vector2( 101.682, 231.789 )
 
 [node name="Player" type="KinematicBody2D" groups=[
 "Selectable",
@@ -17,24 +17,22 @@ collision_mask = 3
 script = ExtResource( 2 )
 
 [node name="Sprite" type="Sprite" parent="."]
-scale = Vector2( 2, 2 )
+position = Vector2( 0, -120 )
 texture = ExtResource( 1 )
-__meta__ = {
-"_edit_lock_": true
-}
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2( 5.68634, 29.6895 )
 shape = SubResource( 1 )
-__meta__ = {
-"_edit_lock_": true
-}
 
 [node name="LadderDetector" type="Area2D" parent="."]
 collision_layer = 0
 collision_mask = 4
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="LadderDetector"]
+position = Vector2( 2.51303, 34.4767 )
 shape = SubResource( 2 )
+
+[node name="Tween" type="Tween" parent="."]
 
 [connection signal="body_entered" from="LadderDetector" to="." method="_on_Area2D_body_entered"]
 [connection signal="body_exited" from="LadderDetector" to="." method="_on_Area2D_body_exited"]
