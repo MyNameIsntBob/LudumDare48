@@ -13,7 +13,7 @@ var ladder := false
 var golem := false
 var map_size := 256
 var ladder_id := 0
-var golem_id := 5
+var golem_id := 6
 
 #func _ready():
 #	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -77,7 +77,7 @@ func _unhandled_input(event):
 		return
 	
 	if golem:
-		var activeCell = $ToBuild.world_to_map(get_global_mouse_position())
+		var activeCell = $ToBuild.world_to_map(get_global_mouse_position()) + Vector2(0, -1)
 		$ToBuild.set_cellv(activeCell, golem_id)
 		var cells = $ToBuild.get_used_cells()
 		for cell in cells:
@@ -86,7 +86,9 @@ func _unhandled_input(event):
 		
 		if event.is_action_pressed("select"):
 			selected.shuffle()
-			selected[0].build_golem(get_global_mouse_position())
+			
+			
+			selected[0].build_golem($ToBuild.map_to_world(activeCell) + Vector2(256/2, 256 + 256/2))
 			golem = false
 			
 		if event.is_action_pressed("move_camera"):
