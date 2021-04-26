@@ -22,7 +22,7 @@ var direction = {
 var updating := false
 var updateAfterThis := false
 
-var showLines = false
+var showLines = true
 
 const TEST = preload("res://Prefabs/Face.tscn")
 

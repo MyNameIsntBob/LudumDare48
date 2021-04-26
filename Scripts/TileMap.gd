@@ -9,7 +9,7 @@ var pathFinder
 var update_timer := 0.0
 var update_after := 0.5
 var update_map = false
-#var CLAY = preload("res://Prefabs/Clay.tscn")
+var CLAY = preload("res://Prefabs/Clay.tscn")
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -34,7 +34,9 @@ func destroy_block(cell, actual_pos = false):
 		
 #	If it's clay
 	if get_cellv(cell) == 4:
-		pass
+		var clay = CLAY.instance()
+		clay.position = map_to_world(cell) + Vector2(256/2, 256/2)
+		get_parent().add_child(clay)
 	
 	set_cellv(cell, -1)
 	update_bitmask_area(cell)

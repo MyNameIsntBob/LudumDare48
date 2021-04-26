@@ -17,7 +17,6 @@ func _ready():
 	var tileMap = find_parent("Master").find_node("Ground")
 	var tileOn = tileMap.world_to_map(position) + direction
 	if tileMap.get_cellv(tileOn) == 5:
-		print("No break")
 		noExplode = true
 
 
