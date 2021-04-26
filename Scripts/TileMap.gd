@@ -1,7 +1,6 @@
 extends TileMap
 
 
-var targets := []
 export (NodePath) var pathFinderPath
 
 var pathFinder
@@ -11,9 +10,31 @@ var update_after := 0.5
 var update_map = false
 var CLAY = preload("res://Prefabs/Clay.tscn")
 
+var directions = {
+	'up': Vector2(0, -1),
+	'down': Vector2(0, 1),
+	'left': Vector2(-1, 0),
+	'right': Vector2(1, 0),
+	'center': Vector2(0, 0)
+}
+
+var aroundCells = []
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	pathFinder = get_node(pathFinderPath)
+	
+	for key in directions:
+		var dir = directions[key]
+		for key2 in directions:
+			var dir2 = directions[key2]
+			var newDir = dir + dir2
+			for i in range(2):
+				if newDir[i] > 1:
+					newDir[i] = 1 
+				elif newDir[i] < -1:
+					newDir[i] = -1
+			if ! newDir in aroundCells:
+				aroundCells.append(newDir)
 
 func _process(delta):
 	if update_map:
@@ -27,8 +48,6 @@ func _process(delta):
 func destroy_block(cell, actual_pos = false):
 	if !actual_pos:
 		cell = world_to_map(cell)
-	if cell in targets:
-		targets.erase(cell)
 	if get_cellv(cell) == 5:
 		return
 		
@@ -48,32 +67,23 @@ func update_pathfinding():
 	update_map = true
 	
 	
-func target(cell):
+func target(cell, caller_pos):
 	cell = world_to_map(cell)
 	var used_cells = get_used_cells()
-	var aroundCells = [
-	cell - Vector2(1, 0),
-	cell + Vector2(1, 0),
-	cell - Vector2(0, 1),
-	cell + Vector2(0, 1),
-	]
 	
 	var cell_to_use
-	for cell in aroundCells:
-		if !cell in used_cells:
-			cell_to_use = cell
-			break
-	
-	if cell in targets or !(cell in used_cells) or !cell_to_use:
+	var dist_to_cell
+	for dir in aroundCells:
+		var current_cell = cell + dir 
+		if !current_cell in used_cells:
+			var new_cell_dist = map_to_world(current_cell).distance_to(caller_pos)
+			if !cell_to_use or new_cell_dist <  dist_to_cell:
+				cell_to_use = current_cell
+				dist_to_cell = new_cell_dist
+				
+	if !cell_to_use:
 		return false
 	
-	targets.append(cell)
 	
-	
-	
-	return map_to_world(cell_to_use)
+	return map_to_world(cell_to_use) + Vector2(256/2, 256/2)
 
-func untarget(cell):
-	cell = world_to_map(cell)
-	if cell in targets:
-		targets.erase(cell)

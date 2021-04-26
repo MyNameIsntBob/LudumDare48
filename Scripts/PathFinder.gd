@@ -118,7 +118,8 @@ func _draw():
 			var newPos = graph.get_point_position(newPoint)
 			
 			if newPos[0] == pos[0] or newPos[1] == pos[1]:
-				if (newPos[0] == pos[0] + cell_size and newPos[1] == pos[1]):
+				if pos + (direction["right"] * cell_size) == newPos:
+#				if (newPos[0] == pos[0] + cell_size and newPos[1] == pos[1]):
 					closestRight = newPoint
 
 				if !onGround and newPos[0] == pos[0] and newPos[1] > pos[1]:
