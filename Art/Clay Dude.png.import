@@ -2,15 +2,15 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/Pixelated.png-45add6282d8ebfbf535fb2012fab74ef.stex"
+path="res://.import/Clay Dude.png-d1ab57e05d8e91ce83fabac319175a61.stex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Art/Pixelated.png"
-dest_files=[ "res://.import/Pixelated.png-45add6282d8ebfbf535fb2012fab74ef.stex" ]
+source_file="res://Art/Clay Dude.png"
+dest_files=[ "res://.import/Clay Dude.png-d1ab57e05d8e91ce83fabac319175a61.stex" ]
 
 [params]
 

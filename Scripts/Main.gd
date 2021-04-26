@@ -9,9 +9,11 @@ var drag_start
 var drag_end 
 var select_rect = RectangleShape2D.new()
 var mining := false
-var building := false
-
-var item_id := 0
+var ladder := false
+var golem := false
+var map_size := 256
+var ladder_id := 0
+var golem_id := 6
 
 #func _ready():
 #	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -30,9 +32,9 @@ func mine_blocks():
 	var toMine = []
 	for item in get_selection():
 		if item.collider.is_in_group('Mineable'):
-			toMine.append(item.metadata)
+			toMine.append($Ground.map_to_world(item.metadata))
 	for player in selected:
-		player.blocksToDestroy = toMine
+		player.destroy_blocks(toMine)
 	
 func get_selection():
 	select_rect.extents = (drag_end - drag_start) / 2
@@ -44,11 +46,15 @@ func get_selection():
 	drag_end = null
 	return space.intersect_shape(query)
 
+func unselect(node):
+	if node in selected:
+		selected.erase(node)
+
 func _unhandled_input(event):
 	
-	if building:
+	if ladder:
 		var activeCell = $ToBuild.world_to_map(get_global_mouse_position())
-		$ToBuild.set_cellv(activeCell, item_id)
+		$ToBuild.set_cellv(activeCell, ladder_id)
 		var cells = $ToBuild.get_used_cells()
 		for cell in cells:
 			if cell != activeCell:
@@ -56,11 +62,39 @@ func _unhandled_input(event):
 				
 		
 		if event.is_action_pressed('select'):
-			$Ladders.set_cellv($Ladders.world_to_map(get_global_mouse_position()), item_id)
-			for cell in $ToBuild.get_used_cells():
+			selected.shuffle()
+			selected[0].build_ladder(get_global_mouse_position())
+			ladder = false
+#			$Ladders.set_cellv($Ladders.world_to_map(get_global_mouse_position()), ladder_id)
+#			for cell in $ToBuild.get_used_cells():
+#				$ToBuild.set_cellv(cell, -1)
+#			ladder = false
+#			$PathFinder.createMap()
+
+		if event.is_action_pressed("move_camera"):
+			ladder = false
+			$ToBuild.set_cellv(activeCell, -1)
+		return
+	
+	if golem:
+		var activeCell = $ToBuild.world_to_map(get_global_mouse_position()) + Vector2(0, -1)
+		$ToBuild.set_cellv(activeCell, golem_id)
+		var cells = $ToBuild.get_used_cells()
+		for cell in cells:
+			if cell != activeCell:
 				$ToBuild.set_cellv(cell, -1)
-			building = false
-			$PathFinder.createMap()
+		
+		if event.is_action_pressed("select"):
+			selected.shuffle()
+			
+			
+			selected[0].build_golem($ToBuild.map_to_world(activeCell) + Vector2(256/2, 256 + 256/2))
+			golem = false
+			
+		if event.is_action_pressed("move_camera"):
+			golem = false
+			$ToBuild.set_cellv(activeCell, -1)
+		
 		return
 	
 	
@@ -78,8 +112,8 @@ func _unhandled_input(event):
 				for node in selected:
 					node.blocksToDestroy = []
 					node.move_to(result.position)
-		else:
-			$Camera2D.position = get_global_mouse_position()
+#		else:
+#			$Camera2D.position = get_global_mouse_position()
 		
 		
 	if event.is_action_pressed('select'):
@@ -87,7 +121,8 @@ func _unhandled_input(event):
 #			print(selected)
 			if selected.size() != 0 and !mining:
 				for item in selected:
-					item.selected = false
+					if 'selected' in item:
+						item.selected = false
 				selected = []
 			
 			dragging = true
@@ -125,10 +160,33 @@ func _draw():
 
 
 
-func _on_Button_pressed():
+#func _on_Button_pressed():
+#	if selected.size() != 0:
+#		mining = true
+
+
+#func _on_Build_pressed():
+#	building = true
+
+
+func _on_Mine_pressed():
 	if selected.size() != 0:
 		mining = true
 
 
-func _on_Build_pressed():
-	building = true
+func _on_Ladder_pressed():
+	if selected.size() != 0:
+		ladder = true
+
+func _on_Golem_pressed():
+	if selected.size() != 0:
+		golem = true
+
+func _on_Cancel_pressed():
+	for node in selected:
+		node.cancelActions()
+
+	
+#	destroy_blocks, build_golem, build_ladder, move_to, cancelActions
+
+

@@ -5,29 +5,59 @@ extends KinematicBody2D
 # var a = 2
 # var b = "text"
 
-var gravity := 20.0
-var velocity : Vector2
-var acceleration := 1500
-var maxSpeed := 100
-var normalFriction := 0.03
-var stoppedFriction := 0.1
+#var gravity := 20.0
+#var velocity : Vector2
+#var acceleration := 1500
+#var maxSpeed := 100
+#var normalFriction := 0.03
+#var stoppedFriction := 0.1
 
-var block_size := 256
-var target_padding := 150
+#var block_size := 256
+#var target_padding := 150
+
+enum Actions {
+	MOVE,
+	LADDER,
+	GOLEM,
+	MINE,
+	GATHER
+}
+
+#[[Actions.MOVE, Vector2(1, 2)], [Actions.LADDER, Vector2(1, 2)], ]
+var actionList := []
 
 var selected := false
-var atTarget := true
 var path 
 var target
 var blocksToDestroy := []
 var targetBlock 
 var targetBlockPos
+var cancel := false
+var movingTo
+var currentAction 
+
+var mineTime := 2.0
+
+export var halfBuilt = true
+
+var hasResource = false
+
+var moving = false
 
 var onLadder
 
+const gravity := 1000
+
+const move_speed := 1000
+
 onready var pathFinder = get_parent().find_node("PathFinder")
 onready var tilemap = get_parent().find_node("Ground")
+onready var ladders = get_parent().find_node("Ladders")
+onready var toBuild = get_parent().find_node("ToBuild")
 
+const golem_path = 'res://Prefabs/Characters/Player.tscn'
+
+signal here
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -35,104 +65,248 @@ func _ready():
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta):
+func _process(_delta):
+	if halfBuilt:
+		$Half.visible = true
+		$Full.visible = false
+		selected = false
+		cancelActions()
+		return
+	else:
+		$Half.visible = false
+		$Full.visible = true
+	
+	$Resource.visible = hasResource
+	
 	if selected:
-		$Sprite.modulate = Color(1, 0, 0)
+		$Full.modulate = Color(1, 0, 0)
 	else:
-		$Sprite.modulate = Color(1, 1, 1)
+		$Full.modulate = Color(1, 1, 1)
 		
-	var input_vect = Vector2.ZERO
+	if !moving and !onLadder:
+		var below = tilemap.world_to_map(position + Vector2(0, 256/2))
+		if !(below in tilemap.get_used_cells()) and !(below in ladders.get_used_cells()):
+			move_and_slide(Vector2(0, gravity))
 	
-	if !atTarget and target:
-		if target > position:
-			input_vect.x += 1
-		if target < position: 
-			input_vect.x -= 1
+	if actionList.size() > 0 and !currentAction:
+		nextAction()
 			
-#		This is where your issue is located
-#		print(abs(position.x - target.x))
-		if position.distance_to(target) < target_padding: #abs(position.x - target.x) < target_padding:
-			next_target()
-		pass
-		
-	if blocksToDestroy.size() != 0:
-		if targetBlock:
-			if !targetBlock in blocksToDestroy:
-				tilemap.untarget(targetBlock)
-				targetBlock = null 
-				return
-			if position.distance_to(targetBlockPos) < block_size:
-				destroy_block()
-				blocksToDestroy.erase(targetBlock)
-		else:
-			blocksToDestroy.shuffle()
-#	tilemap.map_to_world(targetBlock) + Vector2(block_size/2, block_size/2)
+func nextAction():
+	currentAction = actionList.pop_front()
+	
+	if currentAction[0] == Actions.MOVE:
+		go_to(currentAction[1])
+	elif currentAction[0] == Actions.GATHER:
+		gather()
+	elif currentAction[0] == Actions.MINE:
+		blocksToDestroy = currentAction[1]
+		destroy_block()
+	elif currentAction[0] == Actions.LADDER:
+		ladder()
+	elif currentAction[0] == Actions.GOLEM:
+		print("build_golem")
+		golem()
 
-			for block in blocksToDestroy:
-				var pos = tilemap.map_to_world(block) + Vector2(block_size/2, block_size/2)
-				if !block in tilemap.targets:
-					if !targetBlockPos or position.distance_to(targetBlockPos) > position.distance_to(pos):
-						targetBlock = block
-						targetBlockPos = pos
-				else:
-					blocksToDestroy.erase(block)
-			tilemap.target(targetBlock)
-			atTarget = false
-			if targetBlock:
-				move_to(tilemap.map_to_world(targetBlock) + Vector2(block_size/2, block_size/2))
-	elif targetBlock:
-		tilemap.untarget(targetBlock)
-		targetBlock = null
-		
-	if !onLadder:
-		if velocity.y < 0:
-			velocity.y = 0
-		velocity.y += gravity
-	else:
-		if target.y < position.y:
-			input_vect.y -= 1
-		elif target.y > position.y:
-			input_vect.y += 1
-			
-	if input_vect != Vector2.ZERO:
-		velocity += input_vect * acceleration * delta
-#	else:
-	else:
-		velocity = velocity.linear_interpolate(Vector2(0, velocity.y), stoppedFriction)
-		
-	velocity = velocity.linear_interpolate(Vector2(0, velocity.y), normalFriction)
+func cancelActions():
+	if actionList.size() != 0:
+		for action in actionList:
+			if action[0] == Actions.LADDER:
+				removeToBuild(action[1])
+			if action[0] == Actions.GOLEM:
+				removeToBuild(action[1] - Vector2(0, 256))
+		actionList = []
+	path = []
+	currentAction = null
+	blocksToDestroy = []
+	moving = false
+	cancel = true
+	emit_signal('here')
 	
-	velocity = move_and_slide(velocity)
+func move_to(pos):
+	cancel = false
+	actionList.append([Actions.MOVE, pos])
+
+func build_ladder(pos):
+	cancel = false
+	actionList.append([Actions.GATHER])
+	actionList.append([Actions.LADDER, pos])
+
+func build_golem(pos):
+	cancel = false
+	actionList.append([Actions.GATHER])
+	actionList.append([Actions.GOLEM, pos])
+	actionList.append([Actions.GATHER])
+	actionList.append([Actions.GOLEM, pos])
+
+func destroy_blocks(blocks):
+	cancel = false
+	actionList.append([Actions.MINE, blocks])
+
+func go_to(pos):
+	moving = true
+	path = pathFinder.findPath(position, pos)
+	if !path:
+		if currentAction[0] == Actions.MOVE:
+			currentAction = null
+		emit_signal('here')
+		return
+	movingTo = path[len(path) - 1]
+#	for character in get_tree().get_nodes_in_group('Selectable'):
+#		if character.movingTo == movingTo and character != self:
+#			print("go_to loop :D")
+#			go_to(path[len(path) - 2])
+#			return
+	next_position()
+
+func gather():
+	if hasResource:
+		currentAction = null
+		return
+	
+	var allClay = get_tree().get_nodes_in_group('Clay')
+	for clay in allClay:
+		var p = pathFinder.findPath(position, clay.position)
+		if p.size() != 0:
+			go_to(clay.position)
+			yield(self, 'here')
+			if cancel:
+				return
+			clay.queue_free()
+			hasResource = true
+			currentAction = null
+			return
+	currentAction = null
+
+func ladder():
+	if !hasResource:
+		removeToBuild(currentAction[1])
+		currentAction = null
+		return
+		
+	go_to(currentAction[1])
+	yield(self, 'here')
+	if cancel:
+		return
+	var cell = ladders.world_to_map(currentAction[1])
+	hasResource = false
+	ladders.set_cellv(cell, 0)
+	removeToBuild(currentAction[1])
+	currentAction = null
+	pathFinder.createMap()
+		
+func golem():
+	if !hasResource:
+		print("cancel Build")
+		removeToBuild(currentAction[1] - Vector2(0, 256))
+		currentAction = null
+		return
+	
+	go_to(currentAction[1])
+	yield(self, 'here')
+	if cancel:
+		return
+	hasResource = false
+	removeToBuild(currentAction[1] - Vector2(0, 256))
+	for node in get_tree().get_nodes_in_group('Selectable'):
+		if node.halfBuilt and node.position == currentAction[1]:
+			node.halfBuilt = false
+			currentAction = null
+			return
+	var golem = load(golem_path).instance()
+	golem.position = currentAction[1]
+	get_parent().add_child(golem)
+	currentAction = null
+
+func removeToBuild(pos):
+	var cell = ladders.world_to_map(pos)
+	toBuild.set_cellv(cell, -1)
+	
 
 func destroy_block():
-#	emit_signal("destroyTile", blockToDestroy)
-#	blockToDestroy = null
-	tilemap.destroy_block(targetBlock)
-	targetBlock = null
-
-func move_to(pos):
-	atTarget = false
-	path = pathFinder.findPath(position, pos)
-	next_target()
+	if cancel:
+		return
 	
-func next_target():
+	targetBlock = null
+	var blockSize = blocksToDestroy.size()
+	if blockSize == 0:
+		if currentAction and currentAction[0] == Actions.MINE:
+			currentAction = null
+		return
+	for block in blocksToDestroy:
+		var skip = false
+		for character in get_tree().get_nodes_in_group('Selectable'):
+			if block == character.targetBlock:
+				skip = true
+		if !skip:
+			var pos = tilemap.target(block, position)
+			if pos:
+				path = pathFinder.findPath(position, pos)
+				if len(path) != 0:
+					
+					moving = true
+					movingTo = path[len(path) - 1]
+					next_position()
+					yield(self, 'here')
+					if cancel:
+						return
+						
+					$LoadingBar.start_loading(mineTime)
+					yield($LoadingBar, 'finished')
+					tilemap.destroy_block(block)
+					blocksToDestroy.erase(block)
+
+	if blockSize == blocksToDestroy.size():
+		if currentAction[0] == Actions.MINE:
+			currentAction = null
+		return
+
+	destroy_block()
+#
+#	for block in blocksToDestroy:
+#		if !closest or position.distance_to(block) < position.distance_to(closest):
+#			closest = block
+##	Will return a position to move to
+#	var pos = tilemap.target(closest)
+#	if pos:
+#		targetBlock = closest
+#		move_to(pos, true)
+#		waitState = yield(self, 'here')
+#		if cancel:
+#			return
+#		tilemap.destroy_block(closest)
+#		destroy_block()
+#		return
+#
+#	if closest in tilemap.targets:
+#		blocksToDestroy.erase(closest)
+#	destroy_block()
+	
+func next_position():
+	
+	if cancel:
+		return
+		
 	if len(path) > 0:
 		target = path.pop_front()
-#		if target == null:
-#			jump()
-#			next_target()
+		$Tween.interpolate_property(self, "position", position, target, 1.0 * position.distance_to(target)/move_speed, Tween.TRANS_SINE, Tween.EASE_IN_OUT)
+		$Tween.start()
+		yield($Tween, "tween_completed")
+		if target.x != position.x:
+			$Full.flip_h = target.x > position.x
+		next_position()
 	else:
-		atTarget = true
+		if currentAction[0] == Actions.MOVE:
+			currentAction = null
+		emit_signal('here')
+		moving =  false
 		
-	
-#func block_to_destroy(pos):
-#	blockToDestroy = pos
-#	move_to(tileMap.map_to_world(pos))
+func queue_free():
+	get_parent().unselect(self)
+	.queue_free()
 
 
-func _on_Area2D_body_exited(_body):
-	onLadder = false
-
-
-func _on_Area2D_body_entered(_body):
+func _on_LadderDetector_body_entered(body):
 	onLadder = true
+
+func _on_LadderDetector_body_exited(body):
+	onLadder = false

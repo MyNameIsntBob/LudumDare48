@@ -2,15 +2,15 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/Ladder.png-ee70265fc35b6c7806150ca91d45b14f.stex"
+path="res://.import/ProgressBarBack.png-849cf44c3452d9dde9b648b583345c6f.stex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Art/Ladder.png"
-dest_files=[ "res://.import/Ladder.png-ee70265fc35b6c7806150ca91d45b14f.stex" ]
+source_file="res://Art/ProgressBarBack.png"
+dest_files=[ "res://.import/ProgressBarBack.png-849cf44c3452d9dde9b648b583345c6f.stex" ]
 
 [params]
 
