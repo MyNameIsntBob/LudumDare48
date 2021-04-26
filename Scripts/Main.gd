@@ -44,6 +44,10 @@ func get_selection():
 	drag_end = null
 	return space.intersect_shape(query)
 
+func unselect(node):
+	if node in selected:
+		selected.erase(node)
+
 func _unhandled_input(event):
 	
 	if building:
@@ -78,8 +82,8 @@ func _unhandled_input(event):
 				for node in selected:
 					node.blocksToDestroy = []
 					node.move_to(result.position)
-		else:
-			$Camera2D.position = get_global_mouse_position()
+#		else:
+#			$Camera2D.position = get_global_mouse_position()
 		
 		
 	if event.is_action_pressed('select'):
@@ -87,7 +91,7 @@ func _unhandled_input(event):
 #			print(selected)
 			if selected.size() != 0 and !mining:
 				for item in selected:
-					if item:
+					if 'selected' in item:
 						item.selected = false
 				selected = []
 			
@@ -126,10 +130,23 @@ func _draw():
 
 
 
-func _on_Button_pressed():
+#func _on_Button_pressed():
+#	if selected.size() != 0:
+#		mining = true
+
+
+#func _on_Build_pressed():
+#	building = true
+
+
+func _on_Mine_pressed():
 	if selected.size() != 0:
 		mining = true
 
 
-func _on_Build_pressed():
-	building = true
+func _on_Ladder_pressed():
+	pass # Replace with function body.
+
+
+func _on_Golem_pressed():
+	pass # Replace with function body.

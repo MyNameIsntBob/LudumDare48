@@ -1,19 +1,13 @@
 extends KinematicBody2D
 
 var move_by = 100
-var up := true
+var up := false
 
 var velocity = Vector2(rand_range(-1.0, 1.0), 0.0)
-var speed := 200
+var speed := 300
 
-var fallBy := 100.0
-var fallRange := 50.0
-
-var collision_count := 0
-var explode_after := 10
-var explode_range := 500
-
-var objects_to_explode := []
+var fallBy := 175.0
+var fallRange := 75.0
 
 var select_circle = CircleShape2D.new()
 
@@ -37,16 +31,12 @@ var vectorToDirection = {
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	randomize()
-	select_circle.radius = explode_range
 	_start_tween()
+	
 	
 func _process(delta):
 	var collision_info = move_and_collide(velocity.normalized() * delta * speed)
 	if collision_info:
-		if collision_count >= explode_after:
-			explode()
-		
-		collision_count += 1
 		var direction = collision_info.normal
 		var collider = collision_info.collider
 		if (collider.is_in_group("Selectable")):
@@ -74,21 +64,6 @@ func _start_tween():
 		$Tween.interpolate_property(self, "position:y", position.y, position.y + move_by + rand_range(fallBy - fallRange, fallBy + fallRange) , Tween.TRANS_SINE, Tween.EASE_IN_OUT)
 		
 	$Tween.start()
-	
-func explode():
-	var space = get_world_2d().direct_space_state
-	var query = Physics2DShapeQueryParameters.new()
-	query.set_shape(select_circle)
-	query.transform = Transform2D(0, global_position)
-	var objects = space.intersect_shape(query)
-	
-	for collision in objects:
-		if collision.collider is TileMap:
-			collision.collider.destroy_block(collision.metadata, true)
-		else:
-			collision.collider.queue_free()
-	
-	queue_free()
 
 func _on_Tween_tween_completed(object, key):
 	up = !up

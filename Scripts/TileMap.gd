@@ -5,23 +5,45 @@ var targets := []
 export (NodePath) var pathFinderPath
 
 var pathFinder
+
+var update_timer := 0.0
+var update_after := 0.5
+var update_map = false
 #var CLAY = preload("res://Prefabs/Clay.tscn")
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	pathFinder = get_node(pathFinderPath)
 
+func _process(delta):
+	if update_map:
+		if update_timer <= 0:
+			pathFinder.createMap()
+			update_map = false
+		else:
+			update_timer -= delta
+	pass
+
 func destroy_block(cell, actual_pos = false):
 	if !actual_pos:
 		cell = world_to_map(cell)
 	if cell in targets:
 		targets.erase(cell)
+	if get_cellv(cell) == 5:
+		return
+		
 #	If it's clay
-	if get_cellv(cell) == 1:
+	if get_cellv(cell) == 4:
 		pass
+	
 	set_cellv(cell, -1)
 	update_bitmask_area(cell)
-#	pathFinder.createMap()
+	
+	update_pathfinding()
+	
+func update_pathfinding():
+	update_timer = update_after
+	update_map = true
 	
 	
 func target(cell):

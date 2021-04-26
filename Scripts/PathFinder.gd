@@ -11,7 +11,14 @@ var tileMap
 var laddersMap
 var graph 
 
-var thread
+var direction = {
+	"up": Vector2(0, -1),
+	"down": Vector2(0, 1),
+	"left": Vector2(-1, 0),
+	"right": Vector2(1, 0)
+} 
+
+#var thread
 var updating := false
 var updateAfterThis := false
 
@@ -24,7 +31,7 @@ func _ready():
 	graph = AStar2D.new()
 	tileMap = get_node(tileMapPath)
 	laddersMap = get_node(laddersMapPath)
-	thread = Thread.new()
+#	thread = Thread.new()
 	createMap()
 
 func findPath(start, end):
@@ -54,14 +61,9 @@ func createConections():
 
 	var points = graph.get_points()
 	for point in points:
-		var pos = graph.get_point_position(point)	
-		if pos - Vector2(0, 1) in used_cells:
-			break
-			
-		var onGround = pos + Vector2(0, 1) in used_cells
+		var pos = graph.get_point_position(point)
+		var onGround = (tileMap.world_to_map(pos) + direction["down"]) in used_cells
 		var closestRight = -1
-		var closestLeftDrop = -1
-		var closestRightDrop = -1
 		var closestBelow = -1
 		var stat = cellType(pos, true, true)
 
@@ -69,38 +71,15 @@ func createConections():
 		var noBiJoin = []
 
 		for newPoint in points:
-			if graph.get_point_position(newPoint) - Vector2(0, 1) in used_cells:
-				break
 			var newPos = graph.get_point_position(newPoint)
-			if (newPos[0] == pos[0] + cell_size and newPos[1] == pos[1]):
-				closestRight = newPoint
 			
-#			if ((stat[1] == 0 or newPos[0] == pos[0] + cell_size) and newPos[1] == pos[1] and newPos[0] > pos[0]):
-#				if closestRight < 0 or newPos[0] < graph.get_point_position(closestRight)[0]: 
-#					closestRight = newPoint
+			if newPos[0] == pos[0] or newPos[1] == pos[1]:
+				if (newPos[0] == pos[0] + cell_size and newPos[1] == pos[1]):
+					closestRight = newPoint
 
-#			useThis
-#			if !onGround  
-#			if (stat[0] == -1):
-#				if (newPos[0] == pos[0] - cell_size and newPos[1] > pos[1]):
-#					if closestLeftDrop < 0 or newPos[1] < graph.get_point_position(closestLeftDrop)[1]:
-#						closestLeftDrop = newPoint
-#				if (newPos[1] >= pos[1] and newPos[1] <= pos[1] and 
-#					newPos[0] > pos[0] - (cell_size * 2) and newPos[0] < pos[0]) and cellType(newPos, true, true)[1] == -1 :
-#						pointsToJoin.append(newPoint)
-
-
-			if !onGround and newPos[0] == pos[0] and newPos[1] > pos[1]:
-				if closestBelow < 0 or newPos[1] < graph.get_point_position(closestBelow)[1]:
-					closestBelow = newPoint
-
-			if (stat[1] == -1):
-				if (newPos[0] == pos[0] + cell_size and newPos[1] > pos[1]):
-					if closestRightDrop < 0 or newPos[1] < graph.get_point_position(closestRightDrop)[1]:
-						closestRightDrop = newPoint
-				if (newPos[1] >= pos[1] and newPos[1] <= pos[1] and 
-					newPos[0] < pos[0] + (cell_size * 2) and newPos[0] > pos[0]) and cellType(newPos, true, true)[0] == -1 :
-						pointsToJoin.append(newPoint)
+				if !onGround and newPos[0] == pos[0] and newPos[1] > pos[1]:
+					if closestBelow < 0 or newPos[1] < graph.get_point_position(closestBelow)[1]:
+						closestBelow = newPoint
 
 		if (closestBelow > 0):
 			if (graph.get_point_position(closestBelow)[1] == pos[1] + cell_size):
@@ -115,180 +94,133 @@ func createConections():
 			graph.connect_points (point, joinPoint)
 		for joinPoint in noBiJoin:
 			graph.connect_points (point, joinPoint, false)
+	update()
+#	BuildMap()
 
 func _draw():
 	if !showLines:
 		return
 
-	var space_state = get_world_2d().direct_space_state
 	var used_cells = tileMap.get_used_cells()
 
 	var points = graph.get_points()
 	for point in points:
-
-		if graph.get_point_position(point) - Vector2(0, 1) in used_cells:
-			break
+		var pos = graph.get_point_position(point)
+		var onGround = (tileMap.world_to_map(pos) + direction["down"]) in used_cells
 		var closestRight = -1
-		var closestLeftDrop = -1
-		var closestRightDrop = -1
 		var closestBelow = -1
-		var pos = graph.get_point_position(point)	
 		var stat = cellType(pos, true, true)
 
 		var pointsToJoin = []
 		var noBiJoin = []
 
-
-
 		for newPoint in points:
-			if graph.get_point_position(newPoint) - Vector2(0, 1) in used_cells:
-				break
-
 			var newPos = graph.get_point_position(newPoint)
-			if ((stat[1] == 0 or newPos[0] == pos[0] + cell_size) and newPos[1] == pos[1] and newPos[0] > pos[0]):
-				if closestRight < 0 or newPos[0] < graph.get_point_position(closestRight)[0]: 
+			
+			if newPos[0] == pos[0] or newPos[1] == pos[1]:
+				if (newPos[0] == pos[0] + cell_size and newPos[1] == pos[1]):
 					closestRight = newPoint
-			if (stat[0] == -1):
-				if (newPos[0] == pos[0] - cell_size and newPos[1] > pos[1]):
-					if closestLeftDrop < 0 or newPos[1] < graph.get_point_position(closestLeftDrop)[1]:
-						closestLeftDrop = newPoint
-				if (newPos[1] >= pos[1] and newPos[1] <= pos[1] and 
-					newPos[0] > pos[0] - (cell_size * 2) and newPos[0] < pos[0]) and cellType(newPos, true, true)[1] == -1 :
-						pointsToJoin.append(newPoint)
 
-
-			var result = space_state.intersect_ray(pos, newPos, [], 1)
-			if !result and newPos[0] == pos[0] and newPos[1] > pos[1]:
-				if closestBelow < 0 or newPos[1] < graph.get_point_position(closestBelow)[1]:
-					closestBelow = newPoint
-
-			if (stat[1] == -1):
-				if (newPos[0] == pos[0] + cell_size and newPos[1] > pos[1]):
-					if closestRightDrop < 0 or newPos[1] < graph.get_point_position(closestRightDrop)[1]:
-						closestRightDrop = newPoint
-				if (newPos[1] >= pos[1] and newPos[1] <= pos[1] and 
-					newPos[0] < pos[0] + (cell_size * 2) and newPos[0] > pos[0]) and cellType(newPos, true, true)[0] == -1 :
-						pointsToJoin.append(newPoint)
+				if !onGround and newPos[0] == pos[0] and newPos[1] > pos[1]:
+					if closestBelow < 0 or newPos[1] < graph.get_point_position(closestBelow)[1]:
+						closestBelow = newPoint
 
 		if (closestBelow > 0):
 			if (graph.get_point_position(closestBelow)[1] == pos[1] + cell_size):
 				pointsToJoin.append(closestBelow)
 			else:
 				noBiJoin.append(closestBelow)
-
-		if (closestRight > 0 and !graph.get_point_position(closestRight) - Vector2(0, 1) in used_cells and
-			!graph.get_point_position(point) - Vector2(0, 1) in used_cells):
+				
+		if (closestRight > 0):
 			pointsToJoin.append(closestRight)
+
 
 		for joinPoint in pointsToJoin:
 			draw_line(pos, graph.get_point_position(joinPoint), Color(255, 0, 0), 1)
 		for joinPoint in noBiJoin:
 			draw_line(pos, graph.get_point_position(joinPoint), Color(255, 0, 0), 1)
 
-#func createMap():
+#func updateMap(cell):
+#	var cells = tileMap.get_used_cells()
+#	var ladders = laddersMap.get_used_cells()
+#
+#	tileMap.map_to_world()
+#
+#
 #	pass
 
-#func createMap():
-#	if updating:
-#		updateAfterThis = true
-#		return
-#
-#	updating = true
-#
-##	thread = Thread.new()
-#	thread.start(self, "setUpMap")
-#	thread.wait_to_finish()
-##	thread.wait_to_finish()
-#	print('Thread Down')
-#	updating = false
-#	if updateAfterThis:
-#		createMap()
-
 func createMap():	
+	
+#	if updating:
+#		createConections()
+#		return
+
+#	updating = true
 #	Reset if you already created the map
 	graph.clear() 
 	for node in get_children():
 		remove_child(node)
 		node.queue_free()
 	
-	var space_state = get_world_2d().direct_space_state
+#	var space_state = get_world_2d().direct_space_state
 	var cells = tileMap.get_used_cells()
 	
 	var ladders = laddersMap.get_used_cells()
 	
 	for cell in ladders:
 		createPoint(cell)
-		createPoint(cell + Vector2(0, 1))
+		createPoint(cell + direction["down"])
 	
 	for cell in cells:
-		var above = Vector2(cell[0], cell[1] - 1)
+		var above = cell + direction["up"]
 	#	var evenAboveThat = Vector2(cell[0], cell[1] - 2)
 		if !above in tileMap.get_used_cells():
 			createPoint(cell)
 			var stat = cellType(cell)
 			
-			if stat[0] == -1:
-				createPoint(cell + Vector2(-1, 0))
+			if !cell + direction["left"] in cells:
+				createPoint(cell + direction["left"])
 				pass
 			if stat[1] == -1:
-				createPoint(cell + Vector2(1, 0))
+				createPoint(cell + direction["right"])
 				pass
-		
-#		var stat = cellType(cell)
-#
-#		if (stat):
-#			createPoint(cell)
-			
-#			if stat[1] == -1:
-#				var pos = tileMap.map_to_world(Vector2(cell[0] + 1, cell[1]))
-#				var pto = Vector2(pos[0], pos[1] + 1000)
-#				var result = space_state.intersect_ray(pos, pto, [], 1)
-#				if (result):					
-#					createPoint(tileMap.world_to_map(result.position))
-#
-#			if stat[0] == -1:
-#				var pos = tileMap.map_to_world(Vector2(cell[0] - 1, cell[1]))
-#				var pto = Vector2(pos[0], pos[1] + 1000)
-#				var result = space_state.intersect_ray(pos, pto, [], 1)
-#				if (result):					
-#					createPoint(tileMap.world_to_map(result.position))
 	createConections()
-	update()
 
 func cellType(pos, global = false, isAbove = false):
 	if (global):
 		pos = tileMap.world_to_map(pos)
 	if isAbove:
-		pos = Vector2(pos[0], pos[1] + 1)
+		pos += direction['down']
+#		pos = Vector2(pos[0], pos[1] + 1)
 	var cells = tileMap.get_used_cells()
 	var ladders = laddersMap.get_used_cells()
 	
-#	if (Vector2(pos[0], pos[1] - 1) in cells):
-##		If there's a block above the passes one, return null
-#		return null
+	if (pos + direction["up"] in cells):
+#		If there's a block above the passes one, return null
+		return null
 	var results = Vector2(0, 0)
 	
 #	Checking left
-	if Vector2(pos[0] - 1, pos[1] - 1) in cells:
+	if pos + direction["left"] + direction["up"] in cells:
 #		if wall
 		results[0] = 1
-	elif !(Vector2(pos[0] - 1, pos[1]) in cells) and !(Vector2(pos[0] - 1, pos[1]) in ladders):
+	elif !(pos + direction["left"] in cells) and !(pos + direction["left"]in ladders):
 #		if drop
 		results[0] = -1
 		
 #	Checking right
-	if Vector2(pos[0] + 1, pos[1] - 1) in cells:
+	if pos + direction["right"] + direction["up"] in cells:
 #		if wall
 		results[1] = 1
-	elif !(Vector2(pos[0] + 1, pos[1]) in cells) and !(Vector2(pos[0] + 1, pos[1]) in ladders):
+	elif !(pos + direction["right"] in cells) and !(pos + direction['right'] in ladders):
 #		if drop
 		results[1] = -1
 	return results
 
 func createPoint(cell):
-	var above = Vector2(cell[0], cell[1] - 1)
-#	var evenAboveThat = Vector2(cell[0], cell[1] - 2)
-	if above in tileMap.get_used_cells():
+	var above = cell + direction["up"]
+	var evenAboveThat = above + direction["up"]
+	if above in tileMap.get_used_cells() or evenAboveThat in tileMap.get_used_cells():
 		return
 		
 	var pos = tileMap.map_to_world(above) + Vector2(cell_size/2, cell_size/2)

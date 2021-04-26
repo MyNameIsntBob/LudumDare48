@@ -16,7 +16,6 @@ extends KinematicBody2D
 #var target_padding := 150
 
 var selected := false
-var atTarget := true
 var path 
 var target
 var blocksToDestroy := []
@@ -41,91 +40,22 @@ func _ready():
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta):
+func _process(_delta):
 	if selected:
 		$Sprite.modulate = Color(1, 0, 0)
 	else:
 		$Sprite.modulate = Color(1, 1, 1)
-		
-	var input_vect = Vector2.ZERO
-	
-#	if !atTarget and target:
-#		if target > position:
-#			input_vect.x += 1
-#		if target < position: 
-#			input_vect.x -= 1
-#
-##		This is where your issue is located
-##		print(abs(position.x - target.x))
-#		if position.distance_to(target) < target_padding: #abs(position.x - target.x) < target_padding:
-#			next_target()
-#		pass
-#
-#	if blocksToDestroy.size() != 0:
-#		if targetBlock:
-#			if !targetBlock in blocksToDestroy:
-#				tilemap.untarget(targetBlock)
-#				targetBlock = null 
-#				return
-#			if position.distance_to(targetBlockPos) < block_size:
-#				destroy_block()
-#				blocksToDestroy.erase(targetBlock)
-#		else:
-#			blocksToDestroy.shuffle()
-##	tilemap.map_to_world(targetBlock) + Vector2(block_size/2, block_size/2)
-#
-#			for block in blocksToDestroy:
-#				var pos = tilemap.map_to_world(block) + Vector2(block_size/2, block_size/2)
-#				if !block in tilemap.targets:
-#					if !targetBlockPos or position.distance_to(targetBlockPos) > position.distance_to(pos):
-#						targetBlock = block
-#						targetBlockPos = pos
-#				else:
-#					blocksToDestroy.erase(block)
-#			tilemap.target(targetBlock)
-#			atTarget = false
-#			if targetBlock:
-#				move_to(tilemap.map_to_world(targetBlock) + Vector2(block_size/2, block_size/2))
-#	elif targetBlock:
-#		tilemap.untarget(targetBlock)
-#		targetBlock = null
 
-		
-#	if !onLadder:
-##		if velocity.y < 0:
-#			velocity.y = 0
-#		velocity.y += gravity
-#	else:
-#		if target.y < position.y:
-#			input_vect.y -= 1
-#		elif target.y > position.y:
-#			input_vect.y += 1
-#
-#	if input_vect != Vector2.ZERO:
-#		velocity += input_vect * acceleration * delta
-##	else:
-#	else:
-#		velocity = velocity.linear_interpolate(Vector2(0, velocity.y), stoppedFriction)
-		
-#	velocity = velocity.linear_interpolate(Vector2(0, velocity.y), normalFriction)
-	
-#	velocity = move_and_slide(velocity)
-#func move_to_target():
-#	$Tween
-#	position = position.linear_interpolate(target, move_speed)
-
-func _unhandled_input(event):
-	pass
-
-func cancelActions():
-	if !waitState or true:
-		return
-	cancel = true
-	waitState.resume()
-	cancel = false
+#func cancelActions():
+#	return
+#	if !waitState:
+#		return
+#	cancel = true
+#	waitState.resume()
+#	cancel = false
 
 func destroy_blocks(blocks):
-	cancelActions()
+#	cancelActions()
 	blocksToDestroy = blocks
 	destroy_block()
 			
@@ -175,8 +105,8 @@ func destroy_block():
 #	destroy_block()
 
 func move_to(pos, noCancel = false):
-	if !noCancel:
-		cancelActions()
+#	if !noCancel:
+#		cancelActions()
 	path = pathFinder.findPath(position, pos)
 	if !path:
 		return
@@ -201,11 +131,12 @@ func next_target():
 		next_target()
 	else:
 		emit_signal('here')
-		atTarget = true
+#		atTarget = true
 		
 func queue_free():
 	if targetBlock:
 		tilemap.untarget(targetBlock)
+	get_parent().unselect(self)
 	.queue_free()
 
 func _on_Area2D_body_exited(_body):
