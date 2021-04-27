@@ -22,4 +22,9 @@ func _process(delta):
 
 func start_loading(amount):
 	countTo = amount
+	var t = Timer.new()
+	t.set_wait_time(0.1)
+	self.add_child(t)
+	t.start()
+	yield(t, 'timeout')
 	loading = true

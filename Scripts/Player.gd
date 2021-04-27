@@ -36,6 +36,8 @@ var cancel := false
 var movingTo
 var currentAction 
 
+var loopCount := 0
+
 var mineTime := 2.0
 
 export var halfBuilt = true
@@ -65,7 +67,17 @@ func _ready():
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(_delta):
+func _process(delta):
+	
+	if moving:
+		if $AnimationPlayer.current_animation != 'Walk':
+			$AnimationPlayer.stop()
+			$AnimationPlayer.play("Walk")
+	else:
+		if $AnimationPlayer.current_animation == 'Walk':
+			$AnimationPlayer.stop()
+		$Full.frame = 0
+	
 	if halfBuilt:
 		$Half.visible = true
 		$Full.visible = false
@@ -104,7 +116,6 @@ func nextAction():
 	elif currentAction[0] == Actions.LADDER:
 		ladder()
 	elif currentAction[0] == Actions.GOLEM:
-		print("build_golem")
 		golem()
 
 func cancelActions():
@@ -126,6 +137,10 @@ func move_to(pos):
 	cancel = false
 	actionList.append([Actions.MOVE, pos])
 
+func gather_orb():
+	cancel = false
+	actionList.append([Actions.GATHER])
+
 func build_ladder(pos):
 	cancel = false
 	actionList.append([Actions.GATHER])
@@ -142,21 +157,25 @@ func destroy_blocks(blocks):
 	cancel = false
 	actionList.append([Actions.MINE, blocks])
 
-func go_to(pos):
+func go_to(pos, ignoreStack = false):
 	moving = true
 	path = pathFinder.findPath(position, pos)
-	if !path:
+	if !path or position == pos:
 		if currentAction[0] == Actions.MOVE:
 			currentAction = null
+		moving = false
 		emit_signal('here')
+		loopCount = 0
 		return
 	movingTo = path[len(path) - 1]
-#	for character in get_tree().get_nodes_in_group('Selectable'):
-#		if character.movingTo == movingTo and character != self:
-#			print("go_to loop :D")
-#			go_to(path[len(path) - 2])
-#			return
+	for character in get_tree().get_nodes_in_group('Selectable'):
+		if !ignoreStack and loopCount < 10 and character != self and character.movingTo == movingTo and character != self:
+			loopCount += 1
+			go_to(path[len(path) - 2])
+			return
+	loopCount = 0
 	next_position()
+	
 
 func gather():
 	if hasResource:
@@ -167,7 +186,7 @@ func gather():
 	for clay in allClay:
 		var p = pathFinder.findPath(position, clay.position)
 		if p.size() != 0:
-			go_to(clay.position)
+			go_to(clay.position, true)
 			yield(self, 'here')
 			if cancel:
 				return
@@ -183,7 +202,7 @@ func ladder():
 		currentAction = null
 		return
 		
-	go_to(currentAction[1])
+	go_to(currentAction[1], true)
 	yield(self, 'here')
 	if cancel:
 		return
@@ -196,12 +215,11 @@ func ladder():
 		
 func golem():
 	if !hasResource:
-		print("cancel Build")
 		removeToBuild(currentAction[1] - Vector2(0, 256))
 		currentAction = null
 		return
 	
-	go_to(currentAction[1])
+	go_to(currentAction[1], true)
 	yield(self, 'here')
 	if cancel:
 		return
@@ -223,8 +241,13 @@ func removeToBuild(pos):
 	
 
 func destroy_block():
+	
 	if cancel:
 		return
+		
+	var first = true
+		
+	var cells = tilemap.get_used_cells()
 	
 	targetBlock = null
 	var blockSize = blocksToDestroy.size()
@@ -232,35 +255,47 @@ func destroy_block():
 		if currentAction and currentAction[0] == Actions.MINE:
 			currentAction = null
 		return
-	for block in blocksToDestroy:
-		var skip = false
-		for character in get_tree().get_nodes_in_group('Selectable'):
-			if block == character.targetBlock:
-				skip = true
-		if !skip:
-			var pos = tilemap.target(block, position)
-			if pos:
-				path = pathFinder.findPath(position, pos)
-				if len(path) != 0:
-					
-					moving = true
-					movingTo = path[len(path) - 1]
-					next_position()
-					yield(self, 'here')
-					if cancel:
-						return
-						
-					$LoadingBar.start_loading(mineTime)
-					yield($LoadingBar, 'finished')
-					tilemap.destroy_block(block)
-					blocksToDestroy.erase(block)
 
-	if blockSize == blocksToDestroy.size():
-		if currentAction[0] == Actions.MINE:
+	for block in blocksToDestroy:
+		if !targetBlock:
+			var skip = false
+			if !tilemap.world_to_map(block) in cells:
+				skip = true 
+				
+			for character in get_tree().get_nodes_in_group('Selectable'):
+				if block == character.targetBlock:
+					skip = true
+			if !skip:
+				var pos = tilemap.target(block, position)
+				if pos:
+					path = pathFinder.findPath(position, pos)
+					if len(path) != 0:
+						targetBlock = block
+			else:
+				blocksToDestroy.erase(block)
+	
+	if targetBlock and first:
+		first = false
+		moving = true
+		movingTo = path[len(path) - 1]
+		next_position()
+		yield(self, 'here')
+		if cancel:
+			return
+		$AnimationPlayer.stop()
+		$AnimationPlayer.play("Mine")
+		$LoadingBar.start_loading(mineTime)
+		yield($LoadingBar, 'finished')
+		tilemap.destroy_block(targetBlock)
+		targetBlock = null
+		blocksToDestroy.erase(targetBlock)
+		destroy_block()
+
+	if !targetBlock or blockSize == blocksToDestroy.size():
+		if currentAction and currentAction[0] == Actions.MINE:
 			currentAction = null
 		return
 
-	destroy_block()
 #
 #	for block in blocksToDestroy:
 #		if !closest or position.distance_to(block) < position.distance_to(closest):
@@ -288,14 +323,14 @@ func next_position():
 		
 	if len(path) > 0:
 		target = path.pop_front()
-		$Tween.interpolate_property(self, "position", position, target, 1.0 * position.distance_to(target)/move_speed, Tween.TRANS_SINE, Tween.EASE_IN_OUT)
+		$Tween.interpolate_property(self, "position", position, target, 1.0 * position.distance_to(target)/move_speed, Tween.TRANS_LINEAR, Tween.TRANS_LINEAR)
 		$Tween.start()
-		yield($Tween, "tween_completed")
 		if target.x != position.x:
 			$Full.flip_h = target.x > position.x
+		yield($Tween, "tween_completed")
 		next_position()
 	else:
-		if currentAction[0] == Actions.MOVE:
+		if currentAction and currentAction[0] == Actions.MOVE:
 			currentAction = null
 		emit_signal('here')
 		moving =  false
@@ -310,3 +345,4 @@ func _on_LadderDetector_body_entered(body):
 
 func _on_LadderDetector_body_exited(body):
 	onLadder = false
+

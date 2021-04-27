@@ -76,7 +76,9 @@ tracks/1/keys = {
 "values": [ Vector2( 0.1, 0.1 ), Vector2( 1, 1 ) ]
 }
 
-[node name="Shrooms" type="StaticBody2D"]
+[node name="Shrooms" type="StaticBody2D" groups=[
+"Shroom",
+]]
 script = ExtResource( 2 )
 __meta__ = {
 "_edit_lock_": true

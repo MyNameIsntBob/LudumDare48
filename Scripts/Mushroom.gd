@@ -3,6 +3,8 @@ extends StaticBody2D
 var noExplode = false
 export (Vector2) var direction
 
+var shroomLimit = 1000
+
 const SPORE = preload("res://Prefabs/Spore.tscn")
 
 var EXPLOSION = preload("res://Prefabs/Explosion.tscn")
@@ -36,7 +38,7 @@ func explode():
 func _on_Timer_timeout():
 	spawnSpore()
 	number_spawned += 1
-	if number_spawned >= number_to_spawn and !noExplode:
+	if get_tree().get_nodes_in_group('Selectable').size() >= shroomLimit or (number_spawned >= number_to_spawn and !noExplode):
 		explode()
 		return
 	$Timer.wait_time = rand_range(spawnTime - spawnVar, spawnTime + spawnVar)

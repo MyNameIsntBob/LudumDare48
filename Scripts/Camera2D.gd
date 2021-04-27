@@ -1,15 +1,18 @@
 extends Camera2D
 
 
-var speed = 40
+# Start -1250
 
+
+var speed = 40
+var end = 26050
 var moving = false
 
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
-	if moving:
+	if moving and position.y < end:
 		position.y += speed * delta
 	pass
 

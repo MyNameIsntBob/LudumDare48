@@ -51,7 +51,12 @@ func unselect(node):
 		selected.erase(node)
 
 func _unhandled_input(event):
-	
+		
+	if mining:
+		$MineIcon.position = get_global_mouse_position()
+	else:
+		$MineIcon.position = Vector2(-6000, 0)
+		
 	if ladder:
 		var activeCell = $ToBuild.world_to_map(get_global_mouse_position())
 		$ToBuild.set_cellv(activeCell, ladder_id)
@@ -85,10 +90,15 @@ func _unhandled_input(event):
 				$ToBuild.set_cellv(cell, -1)
 		
 		if event.is_action_pressed("select"):
-			selected.shuffle()
-			
-			
-			selected[0].build_golem($ToBuild.map_to_world(activeCell) + Vector2(256/2, 256 + 256/2))
+#			selected.shuffle()
+			var toBuild
+			for node in selected:
+				if node.hasResource:
+					toBuild = node
+					break
+			if !toBuild:
+				toBuild = selected[0]
+			toBuild.build_golem($ToBuild.map_to_world(activeCell) + Vector2(256/2, 256 + 256/2))
 			golem = false
 			
 		if event.is_action_pressed("move_camera"):
@@ -186,7 +196,8 @@ func _on_Cancel_pressed():
 	for node in selected:
 		node.cancelActions()
 
-	
-#	destroy_blocks, build_golem, build_ladder, move_to, cancelActions
-
-
+func _on_Orb_pressed():
+	for node in selected:
+		if !node.hasResource:
+			node.gather_orb()
+			return

@@ -6,7 +6,9 @@
 [sub_resource type="CircleShape2D" id=1]
 radius = 69.4646
 
-[node name="KinematicBody2D" type="KinematicBody2D"]
+[node name="KinematicBody2D" type="KinematicBody2D" groups=[
+"Shroom",
+]]
 collision_layer = 8
 collision_mask = 11
 script = ExtResource( 2 )
